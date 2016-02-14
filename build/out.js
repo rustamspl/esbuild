@@ -2,7 +2,7 @@
 function(){
 /*(0) => src/tag/pag/ctl.js */
 module.exports = function () {
-    console.log('from tag ctl222');
+    console.log('from tag ctl22211dsd');
 };
 var __return__ = {};
 __return__.qwe = asd;
