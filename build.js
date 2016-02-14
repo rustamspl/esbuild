@@ -53,6 +53,7 @@ var Path = (function() {
 var processEntryFile = (function() {
     var acorn = require('acorn');
     var esrecurse = require('esrecurse');
+    var estraverse = require('estraverse');
     //var astbuilders = require('ast-types').builders;
     var escodegen = require('escodegen');
     //-------------------------------------
