@@ -17,6 +17,7 @@ var Path = (function() {
 //-------------------------------------
 (function() {
     var Chokidar = require('chokidar');
+    var UglifyJS = require("uglify-js");
     var glob = {
         currentPath: Path.resolve('.'),
         files: {},
@@ -30,6 +31,31 @@ var Path = (function() {
         if (!ready) return;
         var code = processEntryFile(glob, 'src/app.js');
         fs.writeFileSync('build/out.js', code);
+        // var result = UglifyJS.minify(code, {
+        //     fromString: true,
+        //     mangle: true,
+        //     compress: {
+        //         sequences: true, // join consecutive statemets with the “comma operator”
+        //         properties: true, // optimize property access: a["foo"] → a.foo
+        //         dead_code: true, // discard unreachable code
+        //         drop_debugger: true, // discard “debugger” statements
+        //         unsafe: true, // some unsafe optimizations (see below)
+        //         conditionals: true, // optimize if-s and conditional expressions
+        //         comparisons: true, // optimize comparisons
+        //         evaluate: true, // evaluate constant expressions
+        //         booleans: true, // optimize boolean expressions
+        //         loops: true, // optimize loops
+        //         unused: true, // drop unused variables/functions
+        //         hoist_funs: true, // hoist function declarations
+        //         hoist_vars: true, // hoist variable declarations
+        //         if_return: true, // optimize if-s followed by return/continue
+        //         join_vars: true, // join var declarations
+        //         cascade: true, // try to cascade `right` into `left` in sequences
+        //         //side_effects: true, // drop side-effect-free statements
+        //         warnings: true // warn about potentially dangerous optimizations/code
+        //     }
+        // });
+        // fs.writeFileSync('build/out.min.js', result.code);
     }
 
     function readFile(path) {
@@ -52,9 +78,7 @@ var Path = (function() {
 //-------------------------------------
 var processEntryFile = (function() {
     var acorn = require('acorn');
-    var esrecurse = require('esrecurse');
     var estraverse = require('estraverse');
-    //var astbuilders = require('ast-types').builders;
     var escodegen = require('escodegen');
     //-------------------------------------
     function Req(glob) {
@@ -74,7 +98,7 @@ var processEntryFile = (function() {
             if (id > 0) {
                 return --id;
             }
-            console.log(p);
+            // console.log(p);
             var code = this.processFile(p);
             this.deps.push({
                 code: code,
@@ -85,9 +109,15 @@ var processEntryFile = (function() {
             return --id;
         },
         render: function() {
-            console.log(this.deps);
+            //console.log(this.deps);
             return [';(function(){\nvar __require__=function(id){return __require__deps[id];};\nvar __require__deps=[', this.deps.map(function(d, i) {
-                return ['\nfunction(){\n', '/*(' + i + ') => ' + d.fn + ' */\n', d.code, '\n}\n\n'].join('');
+                return ['\nfunction(){\n', //
+                    '/*(' + i + ') => ' + d.fn + ' */\n', //
+                    'var __return__;\n', //
+                    d.code, // 
+                    ';return __return__;\n', //
+                    '\n}\n\n' //
+                ].join('');
             }).join(','), '];\n__require__(' + this.entryId + ')();})()'].join('');
         },
         addEntryFile: function(base, fn) {
@@ -100,23 +130,41 @@ var processEntryFile = (function() {
             return escodegen.generate(ast);
         },
         //-------------------------------------
+        //-------------------------------------
         parseAst: function(fn) {
-            var req=this;
+            var req = this;
             var data = this.glob.files[fn];
             var ast = acorn.parse(data);
             fs.writeFileSync(fn + '.json', JSON.stringify(ast));
-            esrecurse.visit(ast, {
-                CallExpression(node) {
-                    console.log(node)
-                    var name = node.callee.name;
-                    if (name == 'require') {
-                        var fn2 = node.arguments[0].value;
-                        node.arguments[0].value = req.addFile(Path.dirname(fn), fn2);
-                        node.callee.name = '__require__';
+            //-------------
+            var ret = {
+                type: 'Identifier',
+                name: '__return__'
+            };
+            estraverse.replace(ast, {
+                enter: function(node, parent) {
+                    if (node.type == 'MemberExpression' //
+                        && node.object.type == 'Identifier' //
+                        && node.object.name == 'module' //
+                        && node.property.type == 'Identifier' //
+                        && node.property.name == 'exports' //
+                    ) {
+                        return ret;
+                    } else
+                    if (node.type == 'CallExpression' //
+                        && node.callee.type == 'Identifier' //
+                        && node.callee.name == 'require' //
+                    ) {
+                        if (node.arguments.length == 1) {
+                            var a0 = node.arguments[0];
+                            var fn2 = a0.value;
+                            a0.value = req.addFile(Path.dirname(fn), fn2);
+                            node.callee.name = '__require__';
+                        }
                     }
-                    //node.arguments[0].value = 'xxzz';
                 }
             });
+            //--------------------------
             return ast;
         }
     };
