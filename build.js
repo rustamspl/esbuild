@@ -86,9 +86,9 @@ var processEntryFile = (function() {
         },
         render: function() {
             console.log(this.deps);
-            return [';var __require__deps=[', this.deps.map(function(d, i) {
+            return [';(function(){\nvar __require__=function(id){return __require__deps[id];};\nvar __require__deps=[', this.deps.map(function(d, i) {
                 return ['\nfunction(){\n', '/*(' + i + ') => ' + d.fn + ' */\n', d.code, '\n}\n\n'].join('');
-            }).join(','), '];function __require__(id){return __require__deps[id];}__require__(' + this.entryId + ')();'].join('');
+            }).join(','), '];\n__require__(' + this.entryId + ')();})()'].join('');
         },
         addEntryFile: function(base, fn) {
             var id = this.addFile(base, fn);
