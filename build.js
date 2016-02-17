@@ -131,6 +131,32 @@ var processEntryFile = (function() {
         },
         //-------------------------------------
         //-------------------------------------
+        ast2func: function(node) {
+            if(node.type!=='FunctionExpression'){
+                throw 'Wrong type:'+node.type;
+            }
+            var body=escodegen.generate(node.body);
+            var params= node.params.reduce(function(p,c){
+                if(c.type=='Identifier'){
+                    p.push(c.name);
+                }
+                return p;
+            },[]).join(',');
+            return new Function(params,body);
+        },
+        //-------------------------------------
+        obj2jsonAst: function(o) {
+            var a=acorn.parse('var r='+JSON.stringify(o));                
+            return a.body[0].declarations[0].init;
+        },
+        //-------------------------------------
+        nodeRequireFile: function(node, fn, a0) {
+            var req = this;
+            var fn2 = a0.value;
+            a0.value = req.addFile(Path.dirname(fn), fn2);
+            node.callee.name = '__require__';
+        },
+        //-------------------------------------
         parseAst: function(fn) {
             var req = this;
             var data = this.glob.files[fn];
@@ -157,9 +183,12 @@ var processEntryFile = (function() {
                     ) {
                         if (node.arguments.length == 1) {
                             var a0 = node.arguments[0];
-                            var fn2 = a0.value;
-                            a0.value = req.addFile(Path.dirname(fn), fn2);
-                            node.callee.name = '__require__';
+                            if (a0.type == 'Literal') {
+                                req.nodeRequireFile(node, fn, a0);
+                            }else if(a0.type == 'FunctionExpression'){
+                                var r=req.ast2func(a0)('nnn');
+                                return req.obj2jsonAst(r);
+                            }
                         }
                     }
                 }
