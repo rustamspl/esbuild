@@ -10,13 +10,17 @@ __return__ = function () {
     var nummm = 4364363;
     var floooat = 4364363;
     var name = requirez0('./rrr');
-    name = requirez1(function (opts) {
-        return opts.name;
-    });
+    var t = {
+        'v': 'nnn',
+        'rrr': 12726,
+        'rnd': 0.6422048730310053
+    };
     requirez2('style.scss', function (opts) {
         return opts.name;
     });
-    requirez3('style.scss', opts => opts.name);
+    requirez3('style.scss', function (opts) {
+        return opts.name;
+    });
 };;return __return__;
 
 }
