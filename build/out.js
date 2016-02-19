@@ -12,8 +12,8 @@ __return__ = function () {
     var name = requirez0('./rrr');
     var t = {
         'v': 'nnn',
-        'rrr': 12726,
-        'rnd': 0.6422048730310053
+        'rrr': 40,
+        'rnd': 0.7603707266971469
     };
     requirez2('style.scss', function (opts) {
         return opts.name;
