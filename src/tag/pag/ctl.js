@@ -5,7 +5,7 @@ module.exports = function() {
     var floooat=4364363.0;
     var name = requirez0('./rrr');
     var t = require(function(a) {
-        return {v:a,rrr:6363*2,rnd:Math.random()};
+        return {v:a,rrr:10*4,rnd:Math.random()};
     });
     
    requirez2('style.scss',function(opts) {
